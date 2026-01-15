@@ -1,0 +1,52 @@
+# **Product Recommendation System - Technical Interview Task**
+
+---
+
+### **Objective**
+
+Design and implement a recommendation engine that personalizes product suggestions based on user behavior and purchase history. The system should handle two distinct user segments with different recommendation strategies.
+
+### **Problem Statement**
+
+You have access to a dataset of approximately 75,000 products with associated pricing information. Your task is to architect and develop a recommendation system capable of identifying 5 relevant products for any given user, while accounting for different user personas and their behavioural patterns.
+
+### **User Segments & Requirements**
+
+**Segment 1: Loyal Customers**
+
+- Users with established purchase history
+- Recommendation strategy should leverage historical buying patterns
+- Focus: Personalisation based on demonstrated preferences
+
+**Segment 2: New Customers**
+
+- Limited or no purchase history
+- Requires alternative recommendation approach
+- Consideration: Cluster users based on browsing/product similarity patterns
+- Challenge: Generate meaningful recommendations despite sparse data
+
+### **Deliverables**
+
+1. **Methodology Document**
+    - Approach for loyal customer recommendations
+    - Approach for new customer recommendations (cold-start problem)
+    - Justification for chosen algorithms and trade-offs
+2. **REST API Implementation**
+    - Endpoint to retrieve product recommendations for a user
+    - Response should include:
+        - 5 recommended products
+        - Similarity/relevance score for each product
+        - Confidence score indicating recommendation reliability
+    - Proper error handling and edge case management
+3. **Code Quality**
+    - Production-ready backend architecture
+    - Scalable and maintainable code structure
+    - Clear separation of concerns
+
+### **Evaluation Criteria**
+
+You will be evaluated on the actual implementation of the solution as well as your overall project structure.
+
+All the best!
+
+P.S: Please use the data shared with you in the google sheet to work towards your solution.

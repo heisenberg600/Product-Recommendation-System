@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* Custom theme - Tailwind v4 */
+@theme {
+  --color-primary-50: oklch(0.97 0.014 237.18);
+  --color-primary-100: oklch(0.94 0.028 237.18);
+  --color-primary-200: oklch(0.88 0.056 237.18);
+  --color-primary-300: oklch(0.79 0.097 237.18);
+  --color-primary-400: oklch(0.69 0.138 237.18);
+  --color-primary-500: oklch(0.59 0.174 237.18);
+  --color-primary-600: oklch(0.52 0.157 237.18);
+  --color-primary-700: oklch(0.45 0.132 237.18);
+  --color-primary-800: oklch(0.39 0.107 237.18);
+  --color-primary-900: oklch(0.35 0.085 237.18);
+}
+
+/* Base styles */
+body {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1e293b;
+}
+
+/* Clean card component */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.04),
+    0 1px 2px -1px rgb(0 0 0 / 0.04),
+    0 0 0 1px rgb(0 0 0 / 0.03);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.card-hover {
+  transition: all 0.2s ease-out;
+}
+
+.card-hover:hover {
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.05),
+    0 2px 4px -2px rgb(0 0 0 / 0.05),
+    0 0 0 1px rgb(0 0 0 / 0.05);
+  transform: translateY(-1px);
+}
+
+/* Button components */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: all 0.15s ease-out;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: white;
+  color: #475569;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Input component */
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-out;
+  color: #1e293b;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+/* Badge components */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.badge-primary {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.badge-success {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.badge-warning {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+/* Skeleton loading */
+.skeleton {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  border-radius: 0.5rem;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Clean scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Selection color */
+::selection {
+  background: #bfdbfe;
+  color: #1e40af;
+}

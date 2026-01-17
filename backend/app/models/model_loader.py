@@ -125,6 +125,9 @@ class ModelLoader:
         """
         Get top-N recommendations from ALS model.
 
+        Only works for users in the training data (loyal users).
+        For new users, returns empty list - use Item-CF instead.
+
         Returns:
             List of (item_id, relevance_score, confidence_score) tuples
         """
@@ -133,21 +136,19 @@ class ModelLoader:
 
         exclude_items = exclude_items or []
 
-        # Check if user exists
+        # Check if user exists in training data
         user_idx = self.als_model['user_to_idx'].get(user_id)
         if user_idx is None:
-            logger.debug(f"User {user_id} not in ALS model")
+            logger.debug(f"User {user_id} not in ALS model - use Item-CF instead")
             return []
 
         # Get user factor
         user_factor = self.als_model['user_factors'][user_idx]
+        user_confidence = float(self.als_model['user_confidence'][user_idx])
 
         # Compute scores for all items
         item_factors = self.als_model['item_factors']
         scores = np.dot(item_factors, user_factor)
-
-        # Get user confidence
-        user_confidence = float(self.als_model['user_confidence'][user_idx])
 
         # Create (item_id, score) tuples
         results = []

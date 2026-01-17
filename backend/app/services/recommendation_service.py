@@ -142,14 +142,28 @@ class RecommendationService:
 
         # Get user information
         user_info = self._get_user_info(user_id)
-        is_new_user = not self._model_loader.is_known_user(user_id)
+        user_profile = self._model_loader.get_user_profile(user_id)
+
+        # Determine user type:
+        # - "loyal": In training data (is_loyal=True in profile) → ALS + Item-CF + Popularity
+        # - "new_with_history": Has history but not in training (is_loyal=False) → Item-CF + Popularity
+        # - "anonymous": No history at all → Popularity only
+        if user_profile is None:
+            user_type = "anonymous"
+            is_loyal_user = False
+        elif user_profile.get('is_loyal', False):
+            user_type = "loyal"
+            is_loyal_user = True
+        else:
+            user_type = "new_with_history"
+            is_loyal_user = False
+
+        logger.debug(f"User {user_id} type: {user_type}")
 
         # Prepare exclude items
         exclude_items = []
-        if exclude_purchased and not is_new_user:
-            user_profile = self._model_loader.get_user_profile(user_id)
-            if user_profile:
-                exclude_items = list(user_profile.get('item_last_purchase', {}).keys())
+        if exclude_purchased and user_profile:
+            exclude_items = list(user_profile.get('item_last_purchase', {}).keys())
 
         # Generate recommendations based on user type
         recommendations: List[RecommendationItem] = []
@@ -168,18 +182,28 @@ class RecommendationService:
         fallback_used = False
 
         try:
-            if is_new_user:
-                # New user: Use popularity filtered by price
-                recommendations = self._get_new_user_recommendations(
-                    user_id=user_id,
+            if user_type == "anonymous":
+                # Anonymous user (no history): Use popularity only
+                recommendations = self._get_anonymous_user_recommendations(
                     n=num_recommendations,
                     exclude_items=exclude_items,
                     price_range_min=price_range_min,
                     price_range_max=price_range_max
                 )
                 primary_model = ModelType.POPULARITY
+            elif user_type == "new_with_history":
+                # New user with history: Use Item-CF + Popularity (no ALS)
+                recommendations = self._get_new_user_with_history_recommendations(
+                    user_id=user_id,
+                    n=num_recommendations,
+                    timestamp=timestamp,
+                    exclude_items=exclude_items,
+                    price_range_min=price_range_min,
+                    price_range_max=price_range_max
+                )
+                primary_model = ModelType.ITEM_CF
             else:
-                # Existing user: Two-level recommendation
+                # Loyal user: Full hybrid (ALS + Item-CF + Popularity)
                 recommendations = self._get_existing_user_recommendations(
                     user_id=user_id,
                     n=num_recommendations,
@@ -239,25 +263,122 @@ class RecommendationService:
 
         return response
 
-    def _get_new_user_recommendations(
+    def _get_anonymous_user_recommendations(
         self,
-        user_id: str,
         n: int,
         exclude_items: List[str],
         price_range_min: Optional[float] = None,
         price_range_max: Optional[float] = None
     ) -> List[RecommendationItem]:
         """
-        Get recommendations for a new user using popularity filtered by price.
+        Get recommendations for anonymous user (no history) using popularity only.
         """
         # Use candidate ranker's new user method
         ranked_items = self._candidate_ranker.rank_for_new_user(
-            first_purchase_price=None,  # No history yet
+            first_purchase_price=None,  # No history
             n=n,
             exclude_items=exclude_items
         )
 
         # Apply price filters if specified
+        recommendations = []
+        for item in ranked_items:
+            if price_range_min and item['item_price'] < price_range_min:
+                continue
+            if price_range_max and item['item_price'] > price_range_max:
+                continue
+
+            recommendations.append(RecommendationItem(
+                item_id=item['item_id'],
+                relevance_score=item['relevance_score'],
+                confidence_score=item['confidence_score'],
+                item_price=item['item_price'],
+                recommendation_reason=item['recommendation_reason'],
+                model_source=item['model_source']
+            ))
+
+        return recommendations[:n]
+
+    def _get_new_user_with_history_recommendations(
+        self,
+        user_id: str,
+        n: int,
+        timestamp: datetime,
+        exclude_items: List[str],
+        price_range_min: Optional[float] = None,
+        price_range_max: Optional[float] = None
+    ) -> List[RecommendationItem]:
+        """
+        Get recommendations for new user WITH purchase history.
+
+        Uses Item-CF + Popularity (NO ALS since user not in training data).
+
+        Flow:
+        - Item-CF: Find similar items to what user has purchased
+        - Popularity: Add popular items for diversity
+        - Level 2: Re-rank with price sensitivity and repurchase cycle
+        """
+        candidate_pool_size = self._config.get('candidate_pool_size', 200)
+
+        # Weights for new user with history (no ALS)
+        # Redistribute ALS weight to Item-CF
+        item_cf_weight = 0.7  # More weight on similar items
+        pop_weight = 0.3      # Some popular items for diversity
+
+        candidates = []
+
+        # Get Item-CF recommendations (primary)
+        item_cf_n = int(candidate_pool_size * item_cf_weight * 2)
+        item_cf_recs = self._model_loader.get_item_cf_recommendations(
+            user_id, n=item_cf_n, exclude_items=exclude_items
+        )
+        for item_id, score, confidence in item_cf_recs:
+            candidates.append((item_id, score * item_cf_weight, confidence, 'item_cf'))
+
+        # Get Popularity recommendations (secondary)
+        pop_n = int(candidate_pool_size * pop_weight * 2)
+        pop_recs = self._model_loader.get_popular_items(
+            n=pop_n, exclude_items=exclude_items
+        )
+        for item_id, score, confidence in pop_recs:
+            candidates.append((item_id, score * pop_weight, confidence, 'popularity'))
+
+        # Aggregate scores for items appearing in both
+        item_scores: Dict[str, List[Tuple[float, float, str]]] = {}
+        for item_id, score, confidence, source in candidates:
+            if item_id not in item_scores:
+                item_scores[item_id] = []
+            item_scores[item_id].append((score, confidence, source))
+
+        # Combine scores
+        aggregated_candidates = []
+        for item_id, scores_list in item_scores.items():
+            total_score = sum(s[0] for s in scores_list)
+            avg_confidence = np.mean([s[1] for s in scores_list])
+
+            sources = [s[2] for s in scores_list]
+            if len(set(sources)) > 1:
+                primary_source = 'item_cf'  # Prefer item_cf label
+            else:
+                primary_source = sources[0]
+
+            aggregated_candidates.append((item_id, total_score, avg_confidence, primary_source))
+
+        # Sort and take top candidates
+        aggregated_candidates.sort(key=lambda x: x[1], reverse=True)
+        top_candidates = aggregated_candidates[:candidate_pool_size]
+
+        # Level 2: Re-rank (with new_with_history user type for reduced confidence)
+        ranked_items = self._candidate_ranker.rank(
+            candidates=top_candidates,
+            user_id=user_id,
+            timestamp=timestamp,
+            n=n,
+            exclude_items=exclude_items,
+            user_type="new_with_history"
+        )
+
+        # Apply price filters
         recommendations = []
         for item in ranked_items:
             if price_range_min and item['item_price'] < price_range_min:
@@ -287,9 +408,9 @@ class RecommendationService:
         price_range_max: Optional[float] = None
     ) -> List[RecommendationItem]:
         """
-        Get recommendations for existing user using two-level architecture.
+        Get recommendations for LOYAL user using two-level architecture.
 
-        Level 1: Generate candidates from selected model(s)
+        Level 1: Generate candidates from ALS + Item-CF + Popularity
         Level 2: Re-rank with business logic
 
         Args:
@@ -383,7 +504,7 @@ class RecommendationService:
         top_candidates = aggregated_candidates[:candidate_pool_size]
 
         # =====================================================================
-        # LEVEL 2: Re-ranking
+        # LEVEL 2: Re-ranking (loyal user = full confidence)
         # =====================================================================
 
         ranked_items = self._candidate_ranker.rank(
@@ -391,7 +512,8 @@ class RecommendationService:
             user_id=user_id,
             timestamp=timestamp,
             n=n,
-            exclude_items=exclude_items
+            exclude_items=exclude_items,
+            user_type="loyal"
         )
 
         # Apply additional price filters if specified

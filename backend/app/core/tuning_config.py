@@ -136,13 +136,20 @@ TUNING_CONFIG = {
 
     # ==========================================================================
     # CONFIDENCE SCORE CALCULATION
+    # Different user types get different confidence levels based on data quality
     # ==========================================================================
     "confidence": {
         "base_confidence": 0.5,           # Base confidence for all recommendations
         "history_factor_weight": 0.3,     # Weight for user history depth
         "model_agreement_weight": 0.2,    # Weight for model agreement
         "min_confidence": 0.1,            # Minimum confidence score
-        "max_confidence": 0.99            # Maximum confidence score
+        "max_confidence": 0.99,           # Maximum confidence score
+        # User type confidence multipliers (applied to base confidence)
+        "user_type_multipliers": {
+            "loyal": 1.0,               # Full confidence - user in training data
+            "new_with_history": 0.5,    # Reduced - has history but not in training
+            "anonymous": 0.3            # Low confidence - no personalization possible
+        }
     },
 
     # ==========================================================================

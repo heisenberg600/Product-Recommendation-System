@@ -53,7 +53,8 @@ class CandidateRanker:
         user_id: str,
         timestamp: datetime = None,
         n: int = 5,
-        exclude_items: List[str] = None
+        exclude_items: List[str] = None,
+        user_type: str = "loyal"
     ) -> List[Dict]:
         """
         Rank candidates and return final recommendations.
@@ -71,6 +72,10 @@ class CandidateRanker:
             timestamp: Current request timestamp (for repurchase cycle)
             n: Number of final recommendations to return
             exclude_items: Items to exclude from recommendations
+            user_type: Type of user - "loyal", "new_with_history", or "anonymous"
+                - loyal: Full confidence (in training data)
+                - new_with_history: Reduced confidence (has history, not in training)
+                - anonymous: Low confidence (no personalization)
 
         Returns:
             List of recommendation dicts with item_id, relevance_score,
@@ -86,9 +91,11 @@ class CandidateRanker:
         user_segment = self.model_loader.get_user_segment(user_id)
         user_avg_price = self.model_loader.get_user_avg_price(user_id)
 
-        is_new_user = user_profile is None
+        # Use user_type for confidence calculation
+        # "loyal" = full confidence, "new_with_history" = reduced, "anonymous" = low
+        is_anonymous = user_type == "anonymous"
 
-        if is_new_user:
+        if is_anonymous or user_profile is None:
             # Use default segment for new users
             user_segment = self.config.get('price_sensitivity', {}).get(
                 'new_user_default_segment', 'average'
@@ -171,9 +178,10 @@ class CandidateRanker:
             # STEP 3: Apply repurchase cycle logic
             # - Exclude if purchased too recently (< exclusion_buffer_factor * avg_cycle)
             # - BOOST if item is due for repurchase (> avg_cycle)
+            # Only applies to loyal users (in training data with full history)
             # =================================================================
             repurchase_boost = 0.0
-            if repurchase_enabled and not is_new_user:
+            if repurchase_enabled and user_type == "loyal":
                 # Check if should exclude (too recent)
                 if self._should_exclude_repurchase(
                     item_id, user_id, timestamp, exclusion_buffer_factor
@@ -229,9 +237,9 @@ class CandidateRanker:
             # Normalize to 0-1
             relevance_score = np.clip(relevance_score, 0, 1)
 
-            # Compute final confidence score
+            # Compute final confidence score (varies by user type)
             confidence_score = self._compute_confidence(
-                base_confidence, price_match_score, is_new_user
+                base_confidence, price_match_score, user_type
             )
 
             # Generate recommendation reason
@@ -487,18 +495,26 @@ class CandidateRanker:
         self,
         base_confidence: float,
         price_match_score: float,
-        is_new_user: bool
+        user_type: str
     ) -> float:
         """
-        Compute final confidence score.
+        Compute final confidence score based on user type.
 
-        Combines model confidence with price match and user status.
+        Different user types get different confidence levels:
+        - loyal: Full confidence (user in training data)
+        - new_with_history: Reduced confidence (has history but not in training)
+        - anonymous: Low confidence (no personalization possible)
         """
         confidence_config = self.config.get('confidence', {})
-        base_conf_weight = confidence_config.get('base_confidence', 0.5)
-        history_weight = confidence_config.get('history_factor_weight', 0.3)
         min_conf = confidence_config.get('min_confidence', 0.1)
         max_conf = confidence_config.get('max_confidence', 0.99)
+
+        # Get user type multipliers
+        user_type_multipliers = confidence_config.get('user_type_multipliers', {
+            'loyal': 1.0,
+            'new_with_history': 0.5,
+            'anonymous': 0.3
+        })
 
         # Start with base confidence
         confidence = base_confidence
@@ -506,9 +522,9 @@ class CandidateRanker:
         # Boost by price match
         confidence = confidence * 0.7 + price_match_score * 0.3
 
-        # Reduce confidence for new users
-        if is_new_user:
-            confidence *= 0.7
+        # Apply user type multiplier
+        multiplier = user_type_multipliers.get(user_type, 0.5)
+        confidence *= multiplier
 
         # Clamp to range
         confidence = np.clip(confidence, min_conf, max_conf)
@@ -602,16 +618,28 @@ class CandidateRanker:
             price_max=price_max
         )
 
+        # Get confidence multiplier for anonymous users from config
+        confidence_config = self.config.get('confidence', {})
+        user_type_multipliers = confidence_config.get('user_type_multipliers', {})
+        anonymous_multiplier = user_type_multipliers.get('anonymous', 0.3)
+        min_conf = confidence_config.get('min_confidence', 0.1)
+        max_conf = confidence_config.get('max_confidence', 0.99)
+
         # Format results
         results = []
         for item_id, popularity_score, confidence in popular_items[:n]:
             item_features = self.model_loader.get_item_features(item_id)
             item_price = item_features.get('avg_price', 0) if item_features else 0
 
+            # Apply anonymous user multiplier for confidence
+            adjusted_confidence = np.clip(
+                confidence * anonymous_multiplier, min_conf, max_conf
+            )
+
             results.append({
                 'item_id': item_id,
                 'relevance_score': round(popularity_score, 4),
-                'confidence_score': round(confidence * 0.7, 4),  # Lower confidence for new users
+                'confidence_score': round(adjusted_confidence, 4),
                 'item_price': round(item_price, 2),
                 'recommendation_reason': "Popular item in your price range",
                 'model_source': 'popularity'

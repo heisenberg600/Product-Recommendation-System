@@ -45,15 +45,25 @@ class Settings(BaseSettings):
         env_path = os.getenv("DATA_DIR")
         if env_path:
             return Path(env_path)
-        # Try relative to config file (development)
-        config_relative = Path(__file__).parent.parent.parent.parent / "data"
-        if config_relative.exists():
-            return config_relative
-        # Try relative to CWD (Railway deployment)
-        cwd_relative = Path("../data")
-        if cwd_relative.exists():
-            return cwd_relative
-        return config_relative  # Default
+
+        # Get the directory containing this config file, then navigate up
+        config_dir = Path(__file__).resolve().parent  # app/core/
+        app_dir = config_dir.parent  # app/
+        backend_dir = app_dir.parent  # backend/
+
+        # Try multiple locations (in order of preference)
+        possible_paths = [
+            backend_dir / "data",  # backend/data (Railway deployment)
+            backend_dir.parent / "data",  # repo root/data (local dev)
+            Path.cwd() / "data",  # CWD/data
+        ]
+
+        for path in possible_paths:
+            if path.exists():
+                return path
+
+        # Default to backend/data
+        return backend_dir / "data"
 
     @property
     def models_dir(self) -> Path:
@@ -61,15 +71,25 @@ class Settings(BaseSettings):
         env_path = os.getenv("MODELS_DIR")
         if env_path:
             return Path(env_path)
-        # Try relative to config file (development)
-        config_relative = Path(__file__).parent.parent.parent.parent / "models"
-        if config_relative.exists():
-            return config_relative
-        # Try relative to CWD (Railway deployment)
-        cwd_relative = Path("../models")
-        if cwd_relative.exists():
-            return cwd_relative
-        return config_relative  # Default
+
+        # Get the directory containing this config file, then navigate up
+        config_dir = Path(__file__).resolve().parent  # app/core/
+        app_dir = config_dir.parent  # app/
+        backend_dir = app_dir.parent  # backend/
+
+        # Try multiple locations (in order of preference)
+        possible_paths = [
+            backend_dir / "models",  # backend/models (Railway deployment)
+            backend_dir.parent / "models",  # repo root/models (local dev)
+            Path.cwd() / "models",  # CWD/models
+        ]
+
+        for path in possible_paths:
+            if path.exists():
+                return path
+
+        # Default to backend/models
+        return backend_dir / "models"
 
     excel_file: str = "Data Science - Assignment.xlsx"
 

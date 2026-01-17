@@ -43,32 +43,42 @@ TUNING_CONFIG = {
 
     # ==========================================================================
     # REPURCHASE CYCLE CONFIGURATION
-    # Exclude items bought too recently based on avg repurchase cycle
+    # Boost items when time since purchase > avg repurchase cycle
     # ==========================================================================
     "repurchase_cycle": {
         "enabled": True,
         "default_cycle_days": 30,       # Default if no cycle data
         "min_purchases_for_cycle": 2,   # Min purchases to compute cycle
-        "cycle_buffer_factor": 0.8      # Exclude if days_since < avg_cycle * factor
+        "exclusion_buffer_factor": 0.5, # Exclude if days_since < avg_cycle * factor (too recent)
+        "boost_enabled": True,          # Enable boosting items due for repurchase
+        "boost_factor": 0.15,           # Score boost when item is due (0.15 = +15%)
+        "boost_max_ratio": 2.0          # Max boost when days_since = 2x avg_cycle
     },
 
     # ==========================================================================
     # SCORING WEIGHTS FOR LEVEL 2 RE-RANKING
+    # Relevance score = model_score adjusted by these factors
     # ==========================================================================
     "scoring_weights": {
-        "base_relevance": 0.4,    # Weight for model's base score
-        "price_match": 0.3,       # Weight for price segment match
-        "popularity": 0.2,        # Weight for item popularity
-        "recency": 0.1            # Weight for item recency
+        "model_score": 0.60,      # Primary weight for model's raw score
+        "popularity_boost": 0.15, # Boost for popular items (multiply, not add)
+        "recency_boost": 0.10,    # Boost for recently purchased items (by others)
+        "price_match_boost": 0.15 # Boost for items matching user's price preference
     },
 
     # ==========================================================================
     # PRICE SENSITIVITY CONFIGURATION
+    # Applies soft penalty to items beyond user's price range (not hard filtering)
     # ==========================================================================
     "price_sensitivity": {
-        "budget_tolerance": 1.5,          # Allow up to 1.5x user's avg price
+        "enabled": True,                     # Enable price sensitivity scoring
+        "budget_tolerance": 1.5,             # No penalty up to 1.5x user's avg price
+        "penalty_start_ratio": 1.5,          # Start penalizing above this ratio
+        "max_penalty_ratio": 3.0,            # Maximum ratio to consider (above = full penalty)
+        "penalty_factor": 0.3,               # Max score reduction (0.3 = reduce by 30%)
+        "penalty_curve": "linear",           # "linear" or "exponential"
         "new_user_default_segment": "average",
-        "strict_budget_for_new_users": True  # Enforce budget strictly for new users
+        "strict_budget_for_new_users": False # Soft penalty for new users too
     },
 
     # ==========================================================================

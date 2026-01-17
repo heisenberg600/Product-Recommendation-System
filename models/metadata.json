@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-01-17T23:41:29.044737",
+  "trained_at": "2026-01-18T00:10:31.393491",
   "version": "1.0.0",
   "n_users": 70,
   "n_items": 10148,
@@ -26,18 +26,26 @@
       "enabled": true,
       "default_cycle_days": 30,
       "min_purchases_for_cycle": 2,
-      "cycle_buffer_factor": 0.8
+      "exclusion_buffer_factor": 0.5,
+      "boost_enabled": true,
+      "boost_factor": 0.15,
+      "boost_max_ratio": 2.0
     },
     "scoring_weights": {
-      "base_relevance": 0.4,
-      "price_match": 0.3,
-      "popularity": 0.2,
-      "recency": 0.1
+      "model_score": 0.6,
+      "popularity_boost": 0.15,
+      "recency_boost": 0.1,
+      "price_match_boost": 0.15
     },
     "price_sensitivity": {
+      "enabled": true,
       "budget_tolerance": 1.5,
+      "penalty_start_ratio": 1.5,
+      "max_penalty_ratio": 3.0,
+      "penalty_factor": 0.3,
+      "penalty_curve": "linear",
       "new_user_default_segment": "average",
-      "strict_budget_for_new_users": true
+      "strict_budget_for_new_users": false
     },
     "new_user": {
       "strategy": "popularity_filtered_by_price",

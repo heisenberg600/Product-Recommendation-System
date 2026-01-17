@@ -1,5 +1,6 @@
 """Application configuration and settings"""
 
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -21,9 +22,21 @@ class Settings(BaseSettings):
     debug: bool = False
     environment: Literal["development", "staging", "production"] = "development"
 
+    # Server - Railway provides PORT env var
+    port: int = int(os.getenv("PORT", "8000"))
+
     # API
     api_prefix: str = "/api/v1"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+
+    # CORS - set CORS_ORIGINS env var as comma-separated list for production
+    # e.g., CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
+    @property
+    def cors_origins(self) -> list[str]:
+        env_origins = os.getenv("CORS_ORIGINS", "")
+        if env_origins:
+            return [origin.strip() for origin in env_origins.split(",")]
+        # Default for local development
+        return ["http://localhost:3000", "http://localhost:5173"]
 
     # Data paths
     data_dir: Path = Path(__file__).parent.parent.parent.parent / "data"

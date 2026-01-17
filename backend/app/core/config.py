@@ -38,9 +38,39 @@ class Settings(BaseSettings):
         # Default for local development
         return ["http://localhost:3000", "http://localhost:5173"]
 
-    # Data paths
-    data_dir: Path = Path(__file__).parent.parent.parent.parent / "data"
-    models_dir: Path = Path(__file__).parent.parent.parent.parent / "models"
+    # Data paths - check multiple locations for deployment flexibility
+    @property
+    def data_dir(self) -> Path:
+        # Check environment variable first
+        env_path = os.getenv("DATA_DIR")
+        if env_path:
+            return Path(env_path)
+        # Try relative to config file (development)
+        config_relative = Path(__file__).parent.parent.parent.parent / "data"
+        if config_relative.exists():
+            return config_relative
+        # Try relative to CWD (Railway deployment)
+        cwd_relative = Path("../data")
+        if cwd_relative.exists():
+            return cwd_relative
+        return config_relative  # Default
+
+    @property
+    def models_dir(self) -> Path:
+        # Check environment variable first
+        env_path = os.getenv("MODELS_DIR")
+        if env_path:
+            return Path(env_path)
+        # Try relative to config file (development)
+        config_relative = Path(__file__).parent.parent.parent.parent / "models"
+        if config_relative.exists():
+            return config_relative
+        # Try relative to CWD (Railway deployment)
+        cwd_relative = Path("../models")
+        if cwd_relative.exists():
+            return cwd_relative
+        return config_relative  # Default
+
     excel_file: str = "Data Science - Assignment.xlsx"
 
     # Model parameters

@@ -52,9 +52,9 @@ ENV/
 # data/
 
 # Model files
-*.pkl
-*.h5
-*.model
+# *.pkl
+# *.h5
+# *.model
 
 # Logs
 *.log

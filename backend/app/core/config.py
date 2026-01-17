@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # Data paths
     data_dir: Path = Path(__file__).parent.parent.parent.parent / "data"
+    models_dir: Path = Path(__file__).parent.parent.parent.parent / "models"
     excel_file: str = "Data Science - Assignment.xlsx"
 
     # Model parameters

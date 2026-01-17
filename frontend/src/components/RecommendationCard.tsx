@@ -1,22 +1,27 @@
-import { Package, Star, Shield, Brain, TrendingUp, DollarSign, Layers, Zap } from 'lucide-react';
-import type { RecommendationItem, ModelType } from '../types';
+import { Package, Star, Shield, Brain, TrendingUp, DollarSign, Layers, Zap, Search } from 'lucide-react';
+import type { RecommendationItem } from '../types';
 
 interface RecommendationCardProps {
   recommendation: RecommendationItem;
   rank: number;
+  onShowSimilar?: (itemId: string) => void;
 }
 
-const modelIcons: Record<ModelType, React.ReactNode> = {
+const modelIcons: Record<string, React.ReactNode> = {
   hybrid: <Layers className="w-3.5 h-3.5" />,
+  blend: <Layers className="w-3.5 h-3.5" />,
   item_cf: <Brain className="w-3.5 h-3.5" />,
+  als: <Zap className="w-3.5 h-3.5" />,
   matrix_factorization: <Zap className="w-3.5 h-3.5" />,
   popularity: <TrendingUp className="w-3.5 h-3.5" />,
   price_segment: <DollarSign className="w-3.5 h-3.5" />,
 };
 
-const modelStyles: Record<ModelType, { bg: string; text: string; label: string }> = {
+const modelStyles: Record<string, { bg: string; text: string; label: string }> = {
   hybrid: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hybrid' },
+  blend: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Blend' },
   item_cf: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Item-CF' },
+  als: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'ALS' },
   matrix_factorization: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Matrix' },
   popularity: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Popular' },
   price_segment: { bg: 'bg-slate-200', text: 'text-slate-700', label: 'Price' },
@@ -30,10 +35,11 @@ const rankStyles: Record<number, string> = {
   5: 'from-purple-400 via-purple-500 to-purple-600 shadow-purple-400/30',
 };
 
-export function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
+export function RecommendationCard({ recommendation, rank, onShowSimilar }: RecommendationCardProps) {
   const relevancePercent = Math.round(recommendation.relevance_score * 100);
-  const confidencePercent = Math.round(recommendation.confidence * 100);
-  const model = modelStyles[recommendation.model_used];
+  const confidencePercent = Math.round(recommendation.confidence_score * 100);
+  const modelSource = recommendation.model_source || 'hybrid';
+  const model = modelStyles[modelSource] || modelStyles.hybrid;
   const rankGradient = rankStyles[rank] || 'from-slate-400 to-slate-500 shadow-slate-400/30';
 
   return (
@@ -54,10 +60,22 @@ export function RecommendationCard({ recommendation, rank }: RecommendationCardP
               <h3 className="font-semibold text-slate-900 font-mono text-sm tracking-tight">
                 {recommendation.item_id}
               </h3>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium ${model.bg} ${model.text}`}>
-                {modelIcons[recommendation.model_used]}
-                {model.label}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium ${model.bg} ${model.text}`}>
+                  {modelIcons[modelSource] || modelIcons.hybrid}
+                  {model.label}
+                </span>
+                {onShowSimilar && (
+                  <button
+                    onClick={() => onShowSimilar(recommendation.item_id)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
+                    title="Find similar items"
+                  >
+                    <Search className="w-3 h-3" />
+                    Similar
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,5 +1,9 @@
-import { TrendingUp, Package, Users, ShoppingCart } from 'lucide-react';
+import { TrendingUp, Package, Users, ShoppingCart, Search } from 'lucide-react';
 import { usePopularItems } from '../hooks/useRecommendations';
+
+interface PopularItemsProps {
+  onShowSimilar?: (itemId: string) => void;
+}
 
 const rankColors = [
   'from-amber-400 to-yellow-500 text-white',
@@ -9,7 +13,7 @@ const rankColors = [
   'from-purple-400 to-purple-500 text-white',
 ];
 
-export function PopularItems() {
+export function PopularItems({ onShowSimilar }: PopularItemsProps) {
   const { data, isLoading } = usePopularItems(10);
 
   return (
@@ -51,15 +55,26 @@ export function PopularItems() {
                   ${item.item_price?.toFixed(2) || 'N/A'}
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-600">
-                  <ShoppingCart className="w-3 h-3" />
-                  {item.purchase_count}
+              <div className="text-right flex-shrink-0 flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-1 text-xs font-medium text-slate-600">
+                    <ShoppingCart className="w-3 h-3" />
+                    {item.purchase_count}
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <Users className="w-2.5 h-2.5" />
+                    {item.unique_buyers} buyers
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                  <Users className="w-2.5 h-2.5" />
-                  {item.unique_buyers} buyers
-                </div>
+                {onShowSimilar && (
+                  <button
+                    onClick={() => onShowSimilar(item.item_id)}
+                    className="w-7 h-7 rounded-lg bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                    title="Find similar items"
+                  >
+                    <Search className="w-3.5 h-3.5 text-indigo-600" />
+                  </button>
+                )}
               </div>
             </div>
           ))

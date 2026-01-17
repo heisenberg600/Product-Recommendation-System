@@ -7,6 +7,7 @@ interface RecommendationResultsProps {
   isLoading: boolean;
   error: Error | null;
   selectedUser: string | null;
+  onShowSimilar?: (itemId: string) => void;
 }
 
 export function RecommendationResults({
@@ -14,6 +15,7 @@ export function RecommendationResults({
   isLoading,
   error,
   selectedUser,
+  onShowSimilar,
 }: RecommendationResultsProps) {
   if (!selectedUser) {
     return (
@@ -161,6 +163,7 @@ export function RecommendationResults({
             key={rec.item_id}
             recommendation={rec}
             rank={index + 1}
+            onShowSimilar={onShowSimilar}
           />
         ))}
       </div>

@@ -1,24 +1,29 @@
 export type UserType = 'loyal' | 'new' | 'unknown';
 
+export type SpendingSegment = 'small' | 'low_average' | 'average' | 'high';
+
 export type ModelType =
   | 'item_cf'
   | 'matrix_factorization'
+  | 'als'
   | 'popularity'
   | 'price_segment'
-  | 'hybrid';
+  | 'hybrid'
+  | 'blend';
 
 export interface RecommendationItem {
   item_id: string;
   relevance_score: number;
-  confidence: number;
+  confidence_score: number;
   item_price: number | null;
   recommendation_reason: string;
-  model_used: ModelType;
+  model_source: string;
 }
 
 export interface UserInfo {
   user_id: string;
   user_type: UserType;
+  spending_segment: SpendingSegment | null;
   total_purchases: number;
   unique_items: number;
   avg_item_price: number | null;
@@ -37,9 +42,15 @@ export interface RecommendationResponse {
 
 export interface SimilarItem {
   item_id: string;
-  similarity_score: number;
+  relevance_score: number;
+  confidence_score: number;
   item_price: number | null;
-  purchase_count: number | null;
+}
+
+export interface SimilarItemsResponse {
+  item_id: string;
+  similar_items: SimilarItem[];
+  processing_time_ms: number;
 }
 
 export interface PopularItem {
@@ -48,13 +59,14 @@ export interface PopularItem {
   purchase_count: number;
   unique_buyers: number;
   popularity_score: number;
+  confidence_score?: number;
 }
 
 export interface HealthResponse {
   status: string;
   version: string;
   models_loaded: boolean;
-  data_loaded: boolean;
+  model_version: string | null;
   timestamp: string;
 }
 
@@ -63,6 +75,7 @@ export interface ModelInfo {
   name: string;
   description: string;
   best_for: string;
+  weights?: Record<string, number>;
 }
 
 export interface UsersResponse {
@@ -71,5 +84,24 @@ export interface UsersResponse {
   users: {
     loyal: string[];
     new: string[];
+  };
+}
+
+export interface TuningConfig {
+  candidate_pool_size: number;
+  model_weights: {
+    als: number;
+    item_cf: number;
+    popularity: number;
+  };
+  upsell: {
+    enabled: boolean;
+    factor: number;
+    price_boost_weight: number;
+  };
+  user_segments: Record<string, number>;
+  repurchase_cycle: {
+    enabled: boolean;
+    default_cycle_days: number;
   };
 }

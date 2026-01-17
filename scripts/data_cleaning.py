@@ -3,9 +3,13 @@
 Data Cleaning Script for Product Recommendation System
 
 This script cleans the raw data by:
-1. Removing items with zero average price (promotional items, samples, etc.)
-2. Validating data integrity
-3. Saving cleaned data for model training
+1. Standardizing column names
+2. Converting data types
+3. Validating data integrity
+4. Saving cleaned data for model training
+
+NOTE: Zero price items are KEPT (not removed) as they may be promotional items
+that still provide valuable co-purchase signals.
 
 Usage:
     python scripts/data_cleaning.py
@@ -13,7 +17,7 @@ Usage:
 Output:
     - data/loyal_customers_cleaned.csv
     - data/new_customers_cleaned.csv
-    - data/removed_items.csv (log of removed items)
+    - data/zero_price_items.csv (log of zero price items for reference)
 """
 
 import pandas as pd
@@ -56,15 +60,21 @@ def load_raw_data(data_path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     loyal_df['item_id'] = loyal_df['item_id'].astype(str)
     new_df['item_id'] = new_df['item_id'].astype(str)
 
+    # Convert user_id to string for consistency
+    loyal_df['user_id'] = loyal_df['user_id'].astype(str)
+    new_df['user_id'] = new_df['user_id'].astype(str)
+
     logger.info(f"Loaded {len(loyal_df):,} loyal customer records")
     logger.info(f"Loaded {len(new_df):,} new customer records")
 
     return loyal_df, new_df
 
 
-def identify_zero_price_items(loyal_df: pd.DataFrame, new_df: pd.DataFrame) -> list:
-    """Identify items with zero average price."""
-
+def identify_zero_price_items(loyal_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
+    """
+    Identify items with zero average price.
+    These are logged but NOT removed (kept for co-purchase signals).
+    """
     # Calculate average price per item
     loyal_item_avg_price = loyal_df.groupby('item_id')['item_price'].mean()
     new_item_avg_price = new_df.groupby('item_id')['item_price'].mean()
@@ -78,49 +88,65 @@ def identify_zero_price_items(loyal_df: pd.DataFrame, new_df: pd.DataFrame) -> l
 
     logger.info(f"Found {len(zero_price_items_loyal)} zero price items in loyal data: {zero_price_items_loyal}")
     logger.info(f"Found {len(zero_price_items_new)} zero price items in new data: {zero_price_items_new}")
-    logger.info(f"Total unique zero price items: {all_zero_price_items}")
+    logger.info(f"Total unique zero price items (KEPT, not removed): {all_zero_price_items}")
 
-    return all_zero_price_items
+    # Get stats for zero price items
+    zero_price_stats = {}
+    for item in all_zero_price_items:
+        loyal_data = loyal_df[loyal_df['item_id'] == item]
+        new_data = new_df[new_df['item_id'] == item]
 
+        zero_price_stats[item] = {
+            'loyal_occurrences': len(loyal_data),
+            'new_occurrences': len(new_data),
+            'total_occurrences': len(loyal_data) + len(new_data),
+            'loyal_unique_users': loyal_data['user_id'].nunique() if len(loyal_data) > 0 else 0,
+            'new_unique_users': new_data['user_id'].nunique() if len(new_data) > 0 else 0,
+            'avg_price': 0.0
+        }
 
-def get_removal_stats(df: pd.DataFrame, items_to_remove: list, dataset_name: str) -> dict:
-    """Get statistics about items to be removed."""
-    stats = {}
-
-    for item in items_to_remove:
-        item_data = df[df['item_id'] == item]
-        if len(item_data) > 0:
-            stats[item] = {
-                'dataset': dataset_name,
-                'occurrences': len(item_data),
-                'unique_users': item_data['user_id'].nunique(),
-                'unique_transactions': item_data['ticket_number'].nunique(),
-                'avg_price': item_data['item_price'].mean(),
-                'total_units': item_data['units_sold'].sum()
-            }
-            logger.info(f"  Item '{item}' in {dataset_name}: {len(item_data)} occurrences, "
-                       f"{item_data['user_id'].nunique()} users, avg_price=${item_data['item_price'].mean():.2f}")
-
-    return stats
+    return zero_price_stats
 
 
-def remove_zero_price_items(df: pd.DataFrame, items_to_remove: list, dataset_name: str) -> pd.DataFrame:
-    """Remove items with zero average price from dataset."""
+def clean_data(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:
+    """
+    Clean the dataset:
+    - Handle missing values
+    - Fix data types
+    - Remove duplicates if any
+    """
     original_count = len(df)
+    cleaned_df = df.copy()
 
-    # Remove rows with zero price items
-    cleaned_df = df[~df['item_id'].isin(items_to_remove)].copy()
+    # Handle missing values
+    null_before = cleaned_df.isnull().sum().sum()
+    if null_before > 0:
+        logger.warning(f"{dataset_name}: Found {null_before} null values")
+        # Fill numeric nulls with 0, keep for investigation
+        cleaned_df['item_price'] = cleaned_df['item_price'].fillna(0)
+        cleaned_df['units_sold'] = cleaned_df['units_sold'].fillna(1)
 
-    removed_count = original_count - len(cleaned_df)
+    # Ensure datetime is properly parsed
+    cleaned_df['ticket_datetime'] = pd.to_datetime(cleaned_df['ticket_datetime'])
 
-    logger.info(f"{dataset_name}: Removed {removed_count:,} records ({removed_count/original_count*100:.2f}%)")
+    # Ensure numeric types
+    cleaned_df['item_price'] = pd.to_numeric(cleaned_df['item_price'], errors='coerce').fillna(0)
+    cleaned_df['units_sold'] = pd.to_numeric(cleaned_df['units_sold'], errors='coerce').fillna(1).astype(int)
+    cleaned_df['ticket_amount'] = pd.to_numeric(cleaned_df['ticket_amount'], errors='coerce').fillna(0)
+
+    # Remove exact duplicates
+    cleaned_df = cleaned_df.drop_duplicates()
+    duplicates_removed = original_count - len(cleaned_df)
+    if duplicates_removed > 0:
+        logger.info(f"{dataset_name}: Removed {duplicates_removed} duplicate records")
+
     logger.info(f"{dataset_name}: Cleaned dataset has {len(cleaned_df):,} records")
 
     return cleaned_df
 
 
-def validate_cleaned_data(df: pd.DataFrame, dataset_name: str) -> bool:
-    """Validate the cleaned dataset."""
+def validate_data(df: pd.DataFrame, dataset_name: str) -> bool:
+    """Validate the dataset."""
     issues = []
 
     # Check for null values
@@ -133,16 +159,15 @@ def validate_cleaned_data(df: pd.DataFrame, dataset_name: str) -> bool:
     if neg_prices > 0:
         issues.append(f"{neg_prices} records with negative prices")
 
-    # Check for zero prices remaining
-    zero_avg_items = df.groupby('item_id')['item_price'].mean()
-    zero_avg_items = zero_avg_items[zero_avg_items == 0]
-    if len(zero_avg_items) > 0:
-        issues.append(f"Zero average price items still present: {zero_avg_items.index.tolist()}")
-
     # Check for negative units
     neg_units = (df['units_sold'] < 0).sum()
     if neg_units > 0:
         issues.append(f"{neg_units} records with negative units_sold")
+
+    # Check date range
+    min_date = df['ticket_datetime'].min()
+    max_date = df['ticket_datetime'].max()
+    logger.info(f"{dataset_name}: Date range {min_date} to {max_date}")
 
     if issues:
         logger.warning(f"{dataset_name} validation issues:")
@@ -155,8 +180,8 @@ def validate_cleaned_data(df: pd.DataFrame, dataset_name: str) -> bool:
 
 
 def save_cleaned_data(loyal_df: pd.DataFrame, new_df: pd.DataFrame,
-                      removal_stats: dict, data_path: Path):
-    """Save cleaned data and removal log."""
+                      zero_price_stats: dict, data_path: Path):
+    """Save cleaned data and metadata."""
 
     # Save cleaned data
     loyal_output = data_path / 'loyal_customers_cleaned.csv'
@@ -168,14 +193,14 @@ def save_cleaned_data(loyal_df: pd.DataFrame, new_df: pd.DataFrame,
     logger.info(f"Saved cleaned loyal data to {loyal_output}")
     logger.info(f"Saved cleaned new data to {new_output}")
 
-    # Save removal log
-    if removal_stats:
-        removal_log = pd.DataFrame.from_dict(removal_stats, orient='index')
-        removal_log.index.name = 'item_id'
-        removal_log = removal_log.reset_index()
-        removal_log_path = data_path / 'removed_items.csv'
-        removal_log.to_csv(removal_log_path, index=False)
-        logger.info(f"Saved removal log to {removal_log_path}")
+    # Save zero price items log (for reference, not removed)
+    if zero_price_stats:
+        zero_price_log = pd.DataFrame.from_dict(zero_price_stats, orient='index')
+        zero_price_log.index.name = 'item_id'
+        zero_price_log = zero_price_log.reset_index()
+        zero_price_log_path = data_path / 'zero_price_items.csv'
+        zero_price_log.to_csv(zero_price_log_path, index=False)
+        logger.info(f"Saved zero price items log to {zero_price_log_path}")
 
     # Save cleaning summary
     summary = {
@@ -186,7 +211,9 @@ def save_cleaned_data(loyal_df: pd.DataFrame, new_df: pd.DataFrame,
         'new_users': new_df['user_id'].nunique(),
         'loyal_items': loyal_df['item_id'].nunique(),
         'new_items': new_df['item_id'].nunique(),
-        'items_removed': list(removal_stats.keys()) if removal_stats else []
+        'zero_price_items_count': len(zero_price_stats),
+        'zero_price_items': list(zero_price_stats.keys()) if zero_price_stats else [],
+        'note': 'Zero price items are KEPT (not removed)'
     }
 
     summary_df = pd.DataFrame([summary])
@@ -207,38 +234,32 @@ def main():
     logger.info("=" * 60)
     logger.info("DATA CLEANING PIPELINE")
     logger.info("=" * 60)
+    logger.info("NOTE: Zero price items are KEPT (not removed)")
 
     # Step 1: Load raw data
     logger.info("\nStep 1: Loading raw data...")
     loyal_df, new_df = load_raw_data(data_path)
 
-    # Step 2: Identify zero price items
-    logger.info("\nStep 2: Identifying zero price items...")
-    zero_price_items = identify_zero_price_items(loyal_df, new_df)
+    # Step 2: Identify zero price items (for logging, not removal)
+    logger.info("\nStep 2: Identifying zero price items (will be KEPT)...")
+    zero_price_stats = identify_zero_price_items(loyal_df, new_df)
 
-    # Step 3: Get removal statistics
-    logger.info("\nStep 3: Analyzing items to be removed...")
-    removal_stats = {}
-    removal_stats.update(get_removal_stats(loyal_df, zero_price_items, 'loyal'))
-    removal_stats.update(get_removal_stats(new_df, zero_price_items, 'new'))
+    # Step 3: Clean data
+    logger.info("\nStep 3: Cleaning data...")
+    loyal_cleaned = clean_data(loyal_df, 'Loyal')
+    new_cleaned = clean_data(new_df, 'New')
 
-    # Step 4: Remove zero price items
-    logger.info("\nStep 4: Removing zero price items...")
-    loyal_cleaned = remove_zero_price_items(loyal_df, zero_price_items, 'Loyal')
-    new_cleaned = remove_zero_price_items(new_df, zero_price_items, 'New')
-
-    # Step 5: Validate cleaned data
-    logger.info("\nStep 5: Validating cleaned data...")
-    loyal_valid = validate_cleaned_data(loyal_cleaned, 'Loyal')
-    new_valid = validate_cleaned_data(new_cleaned, 'New')
+    # Step 4: Validate data
+    logger.info("\nStep 4: Validating data...")
+    loyal_valid = validate_data(loyal_cleaned, 'Loyal')
+    new_valid = validate_data(new_cleaned, 'New')
 
     if not (loyal_valid and new_valid):
-        logger.error("Validation failed! Please review the issues above.")
-        return 1
+        logger.warning("Validation had issues. Data saved anyway for inspection.")
 
-    # Step 6: Save cleaned data
-    logger.info("\nStep 6: Saving cleaned data...")
-    save_cleaned_data(loyal_cleaned, new_cleaned, removal_stats, data_path)
+    # Step 5: Save cleaned data
+    logger.info("\nStep 5: Saving cleaned data...")
+    save_cleaned_data(loyal_cleaned, new_cleaned, zero_price_stats, data_path)
 
     logger.info("\n" + "=" * 60)
     logger.info("DATA CLEANING COMPLETE!")
@@ -248,7 +269,7 @@ def main():
     print("\n" + "=" * 60)
     print("CLEANING SUMMARY")
     print("=" * 60)
-    print(f"\nItems removed: {zero_price_items}")
+    print(f"\nZero price items (KEPT): {list(zero_price_stats.keys())}")
     print(f"\nLoyal Customers:")
     print(f"  - Records: {len(loyal_cleaned):,}")
     print(f"  - Users: {loyal_cleaned['user_id'].nunique()}")
@@ -260,7 +281,7 @@ def main():
     print(f"\nOutput files:")
     print(f"  - {data_path / 'loyal_customers_cleaned.csv'}")
     print(f"  - {data_path / 'new_customers_cleaned.csv'}")
-    print(f"  - {data_path / 'removed_items.csv'}")
+    print(f"  - {data_path / 'zero_price_items.csv'}")
     print(f"  - {data_path / 'cleaning_summary.csv'}")
 
     return 0

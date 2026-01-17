@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -14,13 +14,23 @@ class UserType(str, Enum):
     UNKNOWN = "unknown"
 
 
+class SpendingSegment(str, Enum):
+    """User spending segment (based on average item price percentiles)"""
+    SMALL = "small"           # Bottom 25% - lowest spenders
+    LOW_AVERAGE = "low_average"  # 25-50% - below median
+    AVERAGE = "average"       # 50-75% - above median
+    HIGH = "high"             # Top 25% - highest spenders
+
+
 class ModelType(str, Enum):
     """Recommendation model type"""
     ITEM_CF = "item_cf"
     MATRIX_FACTORIZATION = "matrix_factorization"
+    ALS = "als"
     POPULARITY = "popularity"
     HYBRID = "hybrid"
     PRICE_SEGMENT = "price_segment"
+    BLEND = "blend"
 
 
 class RecommendationItem(BaseModel):
@@ -31,13 +41,13 @@ class RecommendationItem(BaseModel):
         ...,
         ge=0.0,
         le=1.0,
-        description="Relevance score (0-1)"
+        description="Relevance score (0-1) - how relevant this item is to user's preferences"
     )
-    confidence: float = Field(
+    confidence_score: float = Field(
         ...,
         ge=0.0,
         le=1.0,
-        description="Confidence score (0-1)"
+        description="Confidence score (0-1) - how confident the model is in this recommendation"
     )
     item_price: Optional[float] = Field(
         None,
@@ -48,9 +58,9 @@ class RecommendationItem(BaseModel):
         ...,
         description="Why this item was recommended"
     )
-    model_used: ModelType = Field(
+    model_source: str = Field(
         ...,
-        description="Model that generated this recommendation"
+        description="Model that generated this recommendation (als, item_cf, popularity, blend)"
     )
 
     class Config:
@@ -58,10 +68,79 @@ class RecommendationItem(BaseModel):
             "example": {
                 "item_id": "7003858505",
                 "relevance_score": 0.87,
-                "confidence": 0.92,
+                "confidence_score": 0.92,
                 "item_price": 4.99,
-                "recommendation_reason": "Frequently bought with items in your history",
-                "model_used": "item_cf"
+                "recommendation_reason": "Matches your preferences - fits your budget",
+                "model_source": "blend"
+            }
+        }
+
+
+class SimilarItem(BaseModel):
+    """Similar item in similar items response"""
+
+    item_id: str = Field(..., description="Product identifier")
+    relevance_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Similarity/relevance score (0-1)"
+    )
+    confidence_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score (0-1)"
+    )
+    item_price: Optional[float] = Field(
+        None,
+        ge=0.0,
+        description="Item price in dollars"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "item_id": "7003858505",
+                "relevance_score": 0.85,
+                "confidence_score": 0.78,
+                "item_price": 4.99
+            }
+        }
+
+
+class SimilarItemsResponse(BaseModel):
+    """Response for similar items endpoint"""
+
+    item_id: str = Field(..., description="Source item identifier")
+    similar_items: List[SimilarItem] = Field(
+        ...,
+        description="List of similar items"
+    )
+    processing_time_ms: float = Field(
+        ...,
+        description="Time taken to find similar items"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "item_id": "7003858505",
+                "similar_items": [
+                    {
+                        "item_id": "7003858506",
+                        "relevance_score": 0.92,
+                        "confidence_score": 0.85,
+                        "item_price": 4.99
+                    },
+                    {
+                        "item_id": "7003858507",
+                        "relevance_score": 0.88,
+                        "confidence_score": 0.80,
+                        "item_price": 5.49
+                    }
+                ],
+                "processing_time_ms": 12.5
             }
         }
 
@@ -71,6 +150,10 @@ class UserInfo(BaseModel):
 
     user_id: str = Field(..., description="User identifier")
     user_type: UserType = Field(..., description="User segment classification")
+    spending_segment: Optional[str] = Field(
+        None,
+        description="User spending segment (small, low_average, average, high)"
+    )
     total_purchases: int = Field(
         ...,
         ge=0,
@@ -97,7 +180,7 @@ class RecommendationResponse(BaseModel):
 
     user_id: str = Field(..., description="User identifier")
     user_info: UserInfo = Field(..., description="User information")
-    recommendations: list[RecommendationItem] = Field(
+    recommendations: List[RecommendationItem] = Field(
         ...,
         description="List of recommended products"
     )
@@ -125,6 +208,7 @@ class RecommendationResponse(BaseModel):
                 "user_info": {
                     "user_id": "41786230378",
                     "user_type": "loyal",
+                    "spending_segment": "average",
                     "total_purchases": 1523,
                     "unique_items": 487,
                     "avg_item_price": 4.12,
@@ -134,13 +218,13 @@ class RecommendationResponse(BaseModel):
                     {
                         "item_id": "7003858505",
                         "relevance_score": 0.87,
-                        "confidence": 0.92,
+                        "confidence_score": 0.92,
                         "item_price": 4.99,
-                        "recommendation_reason": "Frequently bought with items in your history",
-                        "model_used": "item_cf"
+                        "recommendation_reason": "Matches your preferences - fits your budget",
+                        "model_source": "blend"
                     }
                 ],
-                "primary_model": "item_cf",
+                "primary_model": "hybrid",
                 "fallback_used": False,
                 "processing_time_ms": 45.2,
                 "generated_at": "2025-12-20T14:30:00"
@@ -158,9 +242,13 @@ class UserRecommendationRequest(BaseModel):
         le=20,
         description="Number of recommendations"
     )
-    model_type: Optional[ModelType] = Field(
+    model_type: Optional[str] = Field(
         None,
-        description="Force specific model type"
+        description="Model to use: 'als', 'item_cf', or 'hybrid' (default)"
+    )
+    timestamp: Optional[datetime] = Field(
+        None,
+        description="Current timestamp for repurchase cycle calculations"
     )
     exclude_purchased: bool = Field(
         True,
@@ -185,6 +273,30 @@ class UserRecommendationRequest(BaseModel):
             raise ValueError("user_id cannot be empty")
         return v.strip()
 
+    @field_validator("model_type")
+    @classmethod
+    def validate_model_type(cls, v: Optional[str]) -> Optional[str]:
+        """Validate model_type is valid"""
+        if v is None:
+            return None
+        v = v.lower().strip()
+        # matrix_factorization is an alias for als
+        valid_types = ['als', 'item_cf', 'hybrid', 'matrix_factorization']
+        if v not in valid_types:
+            raise ValueError(f"model_type must be one of: {valid_types}")
+        return v
+
+
+class SimilarItemsRequest(BaseModel):
+    """Request for similar items"""
+
+    n: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Number of similar items to return"
+    )
+
 
 class ModelStats(BaseModel):
     """Statistics for a recommendation model"""
@@ -201,7 +313,7 @@ class ModelStats(BaseModel):
 class SystemStats(BaseModel):
     """System-wide statistics"""
 
-    models: list[ModelStats]
+    models: List[ModelStats]
     total_loyal_users: int
     total_new_users: int
     total_items: int
@@ -215,7 +327,7 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
     models_loaded: bool = Field(..., description="Whether models are loaded")
-    data_loaded: bool = Field(..., description="Whether data is loaded")
+    model_version: Optional[str] = Field(None, description="Version of loaded models")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Health check timestamp"

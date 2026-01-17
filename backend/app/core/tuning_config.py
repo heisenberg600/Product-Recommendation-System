@@ -25,7 +25,7 @@ TUNING_CONFIG = {
     # Enable to boost higher-priced items for revenue optimization
     # ==========================================================================
     "upsell": {
-        "enabled": True,
+        "enabled": False,
         "factor": 0.1,              # 0 = no upsell, 1 = max upsell
         "price_boost_weight": 0.2,  # How much to weight price in final score
         "max_price_ratio": 2.0      # Don't recommend items > 2x user's avg
@@ -72,7 +72,7 @@ TUNING_CONFIG = {
     # ==========================================================================
     "price_sensitivity": {
         "enabled": True,                     # Enable price sensitivity scoring
-        "budget_tolerance": 1.5,             # No penalty up to 1.5x user's avg price
+        "budget_tolerance": 3,               # No penalty up to 1.5x user's avg price
         "penalty_start_ratio": 1.5,          # Start penalizing above this ratio
         "max_penalty_ratio": 3.0,            # Maximum ratio to consider (above = full penalty)
         "penalty_factor": 0.3,               # Max score reduction (0.3 = reduce by 30%)

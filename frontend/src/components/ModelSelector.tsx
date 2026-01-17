@@ -6,7 +6,7 @@ interface ModelSelectorProps {
   onSelectModel: (model: ModelType | null) => void;
 }
 
-const models: { key: ModelType | 'auto'; icon: React.ReactNode; name: string; description: string; gradient: string; bgColor: string }[] = [
+const models: { key: ModelType; icon: React.ReactNode; name: string; description: string; gradient: string; bgColor: string }[] = [
   {
     key: 'hybrid',
     icon: <Layers className="w-5 h-5" />,

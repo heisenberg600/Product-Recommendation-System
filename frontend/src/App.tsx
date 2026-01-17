@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
 });
 
 // Anonymous recommendations component
-function AnonymousResults({ onShowSimilar }: { onShowSimilar: (itemId: string) => void }) {
+function AnonymousResults() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['anonymous-recommendations'],
     queryFn: () => apiClient.getAnonymousRecommendations(5),
@@ -243,7 +243,7 @@ function RecommendationApp() {
           {/* Main Content */}
           <div className="lg:col-span-8">
             {isAnonymous ? (
-              <AnonymousResults onShowSimilar={handleShowSimilar} />
+              <AnonymousResults />
             ) : (
               <RecommendationResults
                 data={recommendations}

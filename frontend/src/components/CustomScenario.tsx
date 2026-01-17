@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingCart, X, Sparkles, Calendar, Loader2, Package, Star, Shield, Search, Check } from 'lucide-react';
+import { ShoppingCart, X, Sparkles, Calendar, Loader2, Package, Star, Shield, Search } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { usePopularItems } from '../hooks/useRecommendations';
 

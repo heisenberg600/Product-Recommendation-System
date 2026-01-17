@@ -2,16 +2,10 @@ import { useState } from 'react';
 import { Search, X, Package, Star, Shield, Loader2 } from 'lucide-react';
 import { usePopularItems } from '../hooks/useRecommendations';
 import { apiClient } from '../api/client';
+import type { SimilarItem } from '../types';
 
 interface SimilarProductsFinderProps {
   onClose: () => void;
-}
-
-interface SimilarItem {
-  item_id: string;
-  relevance_score: number;
-  confidence_score: number;
-  item_price: number;
 }
 
 export function SimilarProductsFinder({ onClose }: SimilarProductsFinderProps) {
@@ -151,7 +145,7 @@ export function SimilarProductsFinder({ onClose }: SimilarProductsFinderProps) {
                             <div className="text-xs text-slate-500">Similar to selected item</div>
                           </div>
                         </div>
-                        {item.item_price > 0 && (
+                        {item.item_price != null && item.item_price > 0 && (
                           <div className="text-lg font-bold text-slate-800">${item.item_price.toFixed(2)}</div>
                         )}
                       </div>

@@ -108,15 +108,21 @@ def identify_zero_price_items(loyal_df: pd.DataFrame, new_df: pd.DataFrame) -> d
     return zero_price_stats
 
 
-def clean_data(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:
+def clean_data(df: pd.DataFrame, dataset_name: str) -> tuple[pd.DataFrame, dict]:
     """
     Clean the dataset:
     - Handle missing values
     - Fix data types
     - Remove duplicates if any
+    - Remove negative units_sold (returns)
+    - Remove negative ticket_amount (refunds)
+
+    Returns:
+        Tuple of (cleaned_df, removal_stats)
     """
     original_count = len(df)
     cleaned_df = df.copy()
+    removal_stats = {}
 
     # Handle missing values
     null_before = cleaned_df.isnull().sum().sum()
@@ -125,6 +131,7 @@ def clean_data(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:
         # Fill numeric nulls with 0, keep for investigation
         cleaned_df['item_price'] = cleaned_df['item_price'].fillna(0)
         cleaned_df['units_sold'] = cleaned_df['units_sold'].fillna(1)
+    removal_stats['nulls_found'] = null_before
 
     # Ensure datetime is properly parsed
     cleaned_df['ticket_datetime'] = pd.to_datetime(cleaned_df['ticket_datetime'])
@@ -135,14 +142,43 @@ def clean_data(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:
     cleaned_df['ticket_amount'] = pd.to_numeric(cleaned_df['ticket_amount'], errors='coerce').fillna(0)
 
     # Remove exact duplicates
+    before_dup = len(cleaned_df)
     cleaned_df = cleaned_df.drop_duplicates()
-    duplicates_removed = original_count - len(cleaned_df)
+    duplicates_removed = before_dup - len(cleaned_df)
     if duplicates_removed > 0:
         logger.info(f"{dataset_name}: Removed {duplicates_removed} duplicate records")
+    removal_stats['duplicates_removed'] = duplicates_removed
 
-    logger.info(f"{dataset_name}: Cleaned dataset has {len(cleaned_df):,} records")
+    # Remove negative units_sold (returns/refunds)
+    before_units = len(cleaned_df)
+    neg_units_df = cleaned_df[cleaned_df['units_sold'] < 0]
+    neg_units_count = len(neg_units_df)
+    if neg_units_count > 0:
+        logger.info(f"{dataset_name}: Found {neg_units_count} records with units_sold < 0 (returns)")
+        logger.info(f"  Removing these records...")
+        cleaned_df = cleaned_df[cleaned_df['units_sold'] >= 0]
+        logger.info(f"{dataset_name}: Removed {neg_units_count} return records")
+    removal_stats['negative_units_sold_removed'] = neg_units_count
 
-    return cleaned_df
+    # Remove negative ticket_amount (refunds/adjustments)
+    before_ticket = len(cleaned_df)
+    neg_ticket_df = cleaned_df[cleaned_df['ticket_amount'] < 0]
+    neg_ticket_count = len(neg_ticket_df)
+    if neg_ticket_count > 0:
+        logger.info(f"{dataset_name}: Found {neg_ticket_count} records with ticket_amount < 0 (refunds)")
+        logger.info(f"  Removing these records...")
+        cleaned_df = cleaned_df[cleaned_df['ticket_amount'] >= 0]
+        logger.info(f"{dataset_name}: Removed {neg_ticket_count} refund records")
+    removal_stats['negative_ticket_amount_removed'] = neg_ticket_count
+
+    total_removed = original_count - len(cleaned_df)
+    removal_stats['total_removed'] = total_removed
+    removal_stats['original_count'] = original_count
+    removal_stats['final_count'] = len(cleaned_df)
+
+    logger.info(f"{dataset_name}: Cleaned dataset has {len(cleaned_df):,} records (removed {total_removed})")
+
+    return cleaned_df, removal_stats
 
 
 def validate_data(df: pd.DataFrame, dataset_name: str) -> bool:
@@ -180,7 +216,8 @@ def validate_data(df: pd.DataFrame, dataset_name: str) -> bool:
 
 
 def save_cleaned_data(loyal_df: pd.DataFrame, new_df: pd.DataFrame,
-                      zero_price_stats: dict, data_path: Path):
+                      zero_price_stats: dict, loyal_removal_stats: dict,
+                      new_removal_stats: dict, data_path: Path):
     """Save cleaned data and metadata."""
 
     # Save cleaned data
@@ -205,15 +242,25 @@ def save_cleaned_data(loyal_df: pd.DataFrame, new_df: pd.DataFrame,
     # Save cleaning summary
     summary = {
         'timestamp': datetime.now().isoformat(),
-        'loyal_records': len(loyal_df),
-        'new_records': len(new_df),
+        'loyal_original_records': loyal_removal_stats['original_count'],
+        'loyal_final_records': loyal_removal_stats['final_count'],
+        'loyal_records_removed': loyal_removal_stats['total_removed'],
+        'loyal_negative_units_removed': loyal_removal_stats['negative_units_sold_removed'],
+        'loyal_negative_ticket_removed': loyal_removal_stats['negative_ticket_amount_removed'],
+        'loyal_duplicates_removed': loyal_removal_stats['duplicates_removed'],
+        'new_original_records': new_removal_stats['original_count'],
+        'new_final_records': new_removal_stats['final_count'],
+        'new_records_removed': new_removal_stats['total_removed'],
+        'new_negative_units_removed': new_removal_stats['negative_units_sold_removed'],
+        'new_negative_ticket_removed': new_removal_stats['negative_ticket_amount_removed'],
+        'new_duplicates_removed': new_removal_stats['duplicates_removed'],
         'loyal_users': loyal_df['user_id'].nunique(),
         'new_users': new_df['user_id'].nunique(),
         'loyal_items': loyal_df['item_id'].nunique(),
         'new_items': new_df['item_id'].nunique(),
         'zero_price_items_count': len(zero_price_stats),
         'zero_price_items': list(zero_price_stats.keys()) if zero_price_stats else [],
-        'note': 'Zero price items are KEPT (not removed)'
+        'note': 'Zero price items KEPT; Negative units_sold and ticket_amount REMOVED'
     }
 
     summary_df = pd.DataFrame([summary])
@@ -246,8 +293,10 @@ def main():
 
     # Step 3: Clean data
     logger.info("\nStep 3: Cleaning data...")
-    loyal_cleaned = clean_data(loyal_df, 'Loyal')
-    new_cleaned = clean_data(new_df, 'New')
+    logger.info("  - Removing negative units_sold (returns)")
+    logger.info("  - Removing negative ticket_amount (refunds)")
+    loyal_cleaned, loyal_removal_stats = clean_data(loyal_df, 'Loyal')
+    new_cleaned, new_removal_stats = clean_data(new_df, 'New')
 
     # Step 4: Validate data
     logger.info("\nStep 4: Validating data...")
@@ -259,7 +308,8 @@ def main():
 
     # Step 5: Save cleaned data
     logger.info("\nStep 5: Saving cleaned data...")
-    save_cleaned_data(loyal_cleaned, new_cleaned, zero_price_stats, data_path)
+    save_cleaned_data(loyal_cleaned, new_cleaned, zero_price_stats,
+                      loyal_removal_stats, new_removal_stats, data_path)
 
     logger.info("\n" + "=" * 60)
     logger.info("DATA CLEANING COMPLETE!")
@@ -269,7 +319,28 @@ def main():
     print("\n" + "=" * 60)
     print("CLEANING SUMMARY")
     print("=" * 60)
-    print(f"\nZero price items (KEPT): {list(zero_price_stats.keys())}")
+
+    print(f"\n--- RECORDS REMOVED ---")
+    print(f"\nLoyal Customers:")
+    print(f"  - Original: {loyal_removal_stats['original_count']:,}")
+    print(f"  - Negative units_sold removed: {loyal_removal_stats['negative_units_sold_removed']}")
+    print(f"  - Negative ticket_amount removed: {loyal_removal_stats['negative_ticket_amount_removed']}")
+    print(f"  - Duplicates removed: {loyal_removal_stats['duplicates_removed']}")
+    print(f"  - Total removed: {loyal_removal_stats['total_removed']}")
+    print(f"  - Final: {loyal_removal_stats['final_count']:,}")
+
+    print(f"\nNew Customers:")
+    print(f"  - Original: {new_removal_stats['original_count']:,}")
+    print(f"  - Negative units_sold removed: {new_removal_stats['negative_units_sold_removed']}")
+    print(f"  - Negative ticket_amount removed: {new_removal_stats['negative_ticket_amount_removed']}")
+    print(f"  - Duplicates removed: {new_removal_stats['duplicates_removed']}")
+    print(f"  - Total removed: {new_removal_stats['total_removed']}")
+    print(f"  - Final: {new_removal_stats['final_count']:,}")
+
+    total_removed = loyal_removal_stats['total_removed'] + new_removal_stats['total_removed']
+    print(f"\nTOTAL RECORDS REMOVED: {total_removed}")
+
+    print(f"\n--- FINAL DATASET ---")
     print(f"\nLoyal Customers:")
     print(f"  - Records: {len(loyal_cleaned):,}")
     print(f"  - Users: {loyal_cleaned['user_id'].nunique()}")
@@ -278,7 +349,12 @@ def main():
     print(f"  - Records: {len(new_cleaned):,}")
     print(f"  - Users: {new_cleaned['user_id'].nunique()}")
     print(f"  - Items: {new_cleaned['item_id'].nunique()}")
-    print(f"\nOutput files:")
+
+    print(f"\n--- ZERO PRICE ITEMS (KEPT) ---")
+    print(f"  Count: {len(zero_price_stats)}")
+    print(f"  Items: {list(zero_price_stats.keys())}")
+
+    print(f"\n--- OUTPUT FILES ---")
     print(f"  - {data_path / 'loyal_customers_cleaned.csv'}")
     print(f"  - {data_path / 'new_customers_cleaned.csv'}")
     print(f"  - {data_path / 'zero_price_items.csv'}")

@@ -1,0 +1,6 @@
+segment,description,customer_count,percentage,loyal_customers,new_customers,total_revenue,revenue_share_%,avg_recency_days,avg_frequency,avg_monetary,avg_r_score,avg_f_score,avg_m_score
+Champion,High spenders who visit often with long-term loyalty,24,20.0,24,0,94001.18,42.94,2.38,187.29,3916.72,4.83,4.75,4.58
+Loyalist,Consistent shoppers with strong engagement,10,8.33,10,0,21020.72,9.6,6.8,121.5,2102.07,3.8,4.2,3.6
+Emerging,Newer customers showing promising purchase patterns,25,20.83,9,16,19028.68,8.69,3.6,24.4,761.15,4.36,2.12,2.12
+At Risk,Previously good customers whose visits have dropped off,29,24.17,11,18,24490.6,11.19,9.48,37.14,844.5,2.76,2.41,2.28
+Hibernating,Inactive customers who have not shopped in a long time,32,26.67,16,16,60360.56,27.57,23.59,58.41,1886.27,1.28,2.53,2.97

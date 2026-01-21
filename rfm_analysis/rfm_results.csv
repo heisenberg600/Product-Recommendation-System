@@ -1,0 +1,121 @@
+user_id,user_type,recency_days,frequency,monetary,r_score,f_score,m_score,rfm_score,segment,segment_description
+41416221680,loyal,3,283,10554.93,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41822888993,loyal,1,259,5854.89,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41777750715,loyal,2,117,5544.5199999999995,5,4,5,545,Champion,High spenders who visit often with long-term loyalty
+41232690684,loyal,3,183,5374.25,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41932272690,loyal,4,209,5151.86,4,5,5,455,Champion,High spenders who visit often with long-term loyalty
+41126839657,loyal,3,189,5113.56,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41521615027,loyal,2,220,4525.56,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41362016251,loyal,2,246,4168.26,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41668606614,loyal,1,191,3995.36,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+4057567284,loyal,3,154,3925.44,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41105067340,loyal,2,267,3887.9,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41504261224,loyal,2,105,3645.3,5,4,5,545,Champion,High spenders who visit often with long-term loyalty
+41202979696,loyal,1,207,3600.92,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41706774086,loyal,2,210,3432.65,5,5,5,555,Champion,High spenders who visit often with long-term loyalty
+41259840571,loyal,1,189,3171.73,5,5,4,554,Champion,High spenders who visit often with long-term loyalty
+4056594768,loyal,4,206,3150.67,4,5,4,454,Champion,High spenders who visit often with long-term loyalty
+41306766150,loyal,4,128,2815.58,4,4,4,444,Champion,High spenders who visit often with long-term loyalty
+41312603814,loyal,3,107,2561.16,5,4,4,544,Champion,High spenders who visit often with long-term loyalty
+41909065674,loyal,4,178,2467.17,4,5,4,454,Champion,High spenders who visit often with long-term loyalty
+4054280725,loyal,3,245,2459.17,5,5,4,554,Champion,High spenders who visit often with long-term loyalty
+41401184730,loyal,2,186,2330.13,5,5,4,554,Champion,High spenders who visit often with long-term loyalty
+41383606467,loyal,1,181,2289.73,5,5,4,554,Champion,High spenders who visit often with long-term loyalty
+41726185347,loyal,2,139,2059.19,5,4,4,544,Champion,High spenders who visit often with long-term loyalty
+41402620252,loyal,2,96,1921.25,5,4,4,544,Champion,High spenders who visit often with long-term loyalty
+41274045475,loyal,11,102,4083.75,3,4,5,345,Loyalist,Consistent shoppers with strong engagement
+41470185411,loyal,9,92,3334.04,3,4,4,344,Loyalist,Consistent shoppers with strong engagement
+41973065295,loyal,9,104,3294.84,3,4,4,344,Loyalist,Consistent shoppers with strong engagement
+41855352331,loyal,7,134,2001.23,3,4,4,344,Loyalist,Consistent shoppers with strong engagement
+41718990155,loyal,11,93,1959.41,3,4,4,344,Loyalist,Consistent shoppers with strong engagement
+41815389821,loyal,3,82,1440.17,5,4,3,543,Loyalist,Consistent shoppers with strong engagement
+4054502996,loyal,11,234,1378.47,3,5,3,353,Loyalist,Consistent shoppers with strong engagement
+41303186381,loyal,3,170,1284.62,5,5,3,553,Loyalist,Consistent shoppers with strong engagement
+4057885545,loyal,3,88,1218.88,5,4,3,543,Loyalist,Consistent shoppers with strong engagement
+6576817785,loyal,1,116,1025.31,5,4,3,543,Loyalist,Consistent shoppers with strong engagement
+5802355014,loyal,2,55,3455.46,5,3,5,535,Emerging,Newer customers showing promising purchase patterns
+41823472430,loyal,3,63,3405.7599999999998,5,3,5,535,Emerging,Newer customers showing promising purchase patterns
+41949602510,loyal,1,52,2167.23,5,3,4,534,Emerging,Newer customers showing promising purchase patterns
+41563366248,loyal,3,81,1951.46,5,3,4,534,Emerging,Newer customers showing promising purchase patterns
+41556793318,loyal,1,45,1828.5,5,3,4,534,Emerging,Newer customers showing promising purchase patterns
+41875261108,loyal,1,64,573.22,5,3,3,533,Emerging,Newer customers showing promising purchase patterns
+41256368612,new,4,3,454.55,4,1,2,412,Emerging,Newer customers showing promising purchase patterns
+41652041180,new,4,2,434.91999999999996,4,1,2,412,Emerging,Newer customers showing promising purchase patterns
+41607535172,loyal,2,54,386.71,5,3,2,532,Emerging,Newer customers showing promising purchase patterns
+41496975955,new,4,4,374.40999999999997,4,2,2,422,Emerging,Newer customers showing promising purchase patterns
+5807685326,new,5,2,366.23,4,1,2,412,Emerging,Newer customers showing promising purchase patterns
+41643124033,loyal,1,52,324.7,5,3,2,532,Emerging,Newer customers showing promising purchase patterns
+41712488601,new,5,2,306.29,4,1,2,412,Emerging,Newer customers showing promising purchase patterns
+41158394412,new,4,5,294.67,4,2,2,422,Emerging,Newer customers showing promising purchase patterns
+41706774086,new,4,21,290.45,4,3,2,432,Emerging,Newer customers showing promising purchase patterns
+41575503934,new,5,4,275.26,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41871070406,new,5,7,272.02,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41223311388,new,5,4,271.88,4,1,1,411,Emerging,Newer customers showing promising purchase patterns
+41913768222,new,5,3,268.57,4,1,1,411,Emerging,Newer customers showing promising purchase patterns
+41841222839,new,5,7,245.8,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41820704793,new,5,6,245.09,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41126839657,new,4,9,231.86,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41947310600,new,4,5,212.31,4,2,1,421,Emerging,Newer customers showing promising purchase patterns
+41691324821,loyal,3,57,207.64,5,3,1,531,Emerging,Newer customers showing promising purchase patterns
+41975754624,new,5,3,183.69,4,1,1,411,Emerging,Newer customers showing promising purchase patterns
+41331954810,loyal,12,232,3358.89,2,5,4,254,At Risk,Previously good customers whose visits have dropped off
+41268786889,loyal,14,79,2325.96,2,3,4,234,At Risk,Previously good customers whose visits have dropped off
+41161557698,loyal,13,120,1926.09,2,4,4,244,At Risk,Previously good customers whose visits have dropped off
+41767763033,loyal,11,51,1806.41,3,3,3,333,At Risk,Previously good customers whose visits have dropped off
+41466031930,loyal,13,94,1611.89,2,4,3,243,At Risk,Previously good customers whose visits have dropped off
+41979178031,loyal,11,56,1390.66,3,3,3,333,At Risk,Previously good customers whose visits have dropped off
+41634106592,loyal,14,89,1323.41,2,4,3,243,At Risk,Previously good customers whose visits have dropped off
+41631689814,loyal,11,70,1314.26,3,3,3,333,At Risk,Previously good customers whose visits have dropped off
+41441394366,loyal,13,38,1206.91,2,3,3,233,At Risk,Previously good customers whose visits have dropped off
+41440392825,loyal,11,67,1124.79,3,3,3,333,At Risk,Previously good customers whose visits have dropped off
+41202354657,loyal,13,72,816.98,2,3,3,233,At Risk,Previously good customers whose visits have dropped off
+41868321077,new,9,6,554.9,3,2,3,323,At Risk,Previously good customers whose visits have dropped off
+41783554337,new,7,7,509.84,3,2,3,323,At Risk,Previously good customers whose visits have dropped off
+41384426442,new,11,4,454.13,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41859244564,new,7,5,424.68,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41709054430,new,9,2,397.76,3,1,2,312,At Risk,Previously good customers whose visits have dropped off
+41416221680,new,6,12,391.56,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41204694503,new,9,1,389.86,3,1,2,312,At Risk,Previously good customers whose visits have dropped off
+41332048604,new,8,6,380.21,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41699429424,new,6,6,348.51,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41997589509,new,6,7,344.28999999999996,3,2,2,322,At Risk,Previously good customers whose visits have dropped off
+41291539210,new,11,4,283.82,3,1,1,311,At Risk,Previously good customers whose visits have dropped off
+41226200341,new,7,4,279.49,3,1,1,311,At Risk,Previously good customers whose visits have dropped off
+4059267757,new,7,7,270.79,3,2,1,321,At Risk,Previously good customers whose visits have dropped off
+41823063655,new,7,4,267.90999999999997,3,2,1,321,At Risk,Previously good customers whose visits have dropped off
+41906626484,new,11,8,265.53,3,2,1,321,At Risk,Previously good customers whose visits have dropped off
+41300317110,new,6,13,264.9,3,3,1,331,At Risk,Previously good customers whose visits have dropped off
+41398462018,new,6,9,253.12,3,2,1,321,At Risk,Previously good customers whose visits have dropped off
+41157419568,new,6,4,203.05,3,1,1,311,At Risk,Previously good customers whose visits have dropped off
+41456069174,loyal,98,266,7510.79,1,5,5,155,Hibernating,Inactive customers who have not shopped in a long time
+41714019299,loyal,39,146,6499.06,1,4,5,145,Hibernating,Inactive customers who have not shopped in a long time
+41168518931,loyal,17,114,5464.95,1,4,5,145,Hibernating,Inactive customers who have not shopped in a long time
+41661165323,loyal,19,80,4903.47,1,3,5,135,Hibernating,Inactive customers who have not shopped in a long time
+41931721188,loyal,17,144,4540.87,1,4,5,145,Hibernating,Inactive customers who have not shopped in a long time
+41977613627,loyal,55,77,4478.4,1,3,5,135,Hibernating,Inactive customers who have not shopped in a long time
+41786230378,loyal,36,59,3776.66,1,3,5,135,Hibernating,Inactive customers who have not shopped in a long time
+5803198592,loyal,26,130,3366.38,1,4,4,144,Hibernating,Inactive customers who have not shopped in a long time
+41527877334,loyal,15,194,2965.22,1,5,4,154,Hibernating,Inactive customers who have not shopped in a long time
+41468041888,loyal,15,105,2818.51,1,4,4,144,Hibernating,Inactive customers who have not shopped in a long time
+4054286212,loyal,80,180,2218.29,1,5,4,154,Hibernating,Inactive customers who have not shopped in a long time
+41451543442,loyal,15,95,1753.6299999999999,1,4,3,143,Hibernating,Inactive customers who have not shopped in a long time
+41142603915,loyal,33,85,1514.79,1,4,3,143,Hibernating,Inactive customers who have not shopped in a long time
+41643084633,loyal,16,65,1011.79,1,3,3,133,Hibernating,Inactive customers who have not shopped in a long time
+41436431881,new,16,4,974.13,1,2,3,123,Hibernating,Inactive customers who have not shopped in a long time
+41591270833,loyal,16,29,701.92,1,3,3,133,Hibernating,Inactive customers who have not shopped in a long time
+41286097791,loyal,26,53,701.55,1,3,3,133,Hibernating,Inactive customers who have not shopped in a long time
+41608220210,new,12,4,512.98,2,2,3,223,Hibernating,Inactive customers who have not shopped in a long time
+41200239228,new,12,2,460.77,2,1,3,213,Hibernating,Inactive customers who have not shopped in a long time
+41401411573,new,13,2,426.37,2,1,2,212,Hibernating,Inactive customers who have not shopped in a long time
+41420042546,new,12,3,411.35,2,1,2,212,Hibernating,Inactive customers who have not shopped in a long time
+41847653588,new,25,2,401.48,1,1,2,112,Hibernating,Inactive customers who have not shopped in a long time
+41846806506,new,18,1,382.64,1,1,2,112,Hibernating,Inactive customers who have not shopped in a long time
+41304577823,new,15,2,377.31,1,1,2,112,Hibernating,Inactive customers who have not shopped in a long time
+41135030385,new,15,2,359.06,1,1,2,112,Hibernating,Inactive customers who have not shopped in a long time
+41197247662,new,15,4,335.35,1,1,2,112,Hibernating,Inactive customers who have not shopped in a long time
+5806680726,new,12,2,277.48,2,1,1,211,Hibernating,Inactive customers who have not shopped in a long time
+41533765522,new,12,4,277.31,2,2,1,221,Hibernating,Inactive customers who have not shopped in a long time
+41923542301,new,17,1,273.17,1,1,1,111,Hibernating,Inactive customers who have not shopped in a long time
+41516246997,new,12,6,245.96999999999997,2,2,1,221,Hibernating,Inactive customers who have not shopped in a long time
+41288886109,new,12,4,226.51,2,1,1,211,Hibernating,Inactive customers who have not shopped in a long time
+41208679580,new,14,4,192.4,2,1,1,211,Hibernating,Inactive customers who have not shopped in a long time
